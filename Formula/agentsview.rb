@@ -41,6 +41,6 @@ class Agentsview < Formula
   end
 
   test do
-    assert_match "agentsview #{version}", shell_output("#{bin}/agentsview version")
+    assert_match version.to_s, shell_output("#{bin}/agentsview version")
   end
 end
