@@ -1,0 +1,62 @@
+name: Update Formulae
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    name: Check for new releases
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      MISE_EXPERIMENTAL: "1"
+      MISE_LOCKED: "1"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up mise
+        uses: jdx/mise-action@v3
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+        with:
+          stable: true
+
+      - name: Update formulae from latest releases
+        run: mise exec --locked -- ruby scripts/update-formulae.rb
+
+      - name: Check formulae
+        if: ${{ hashFiles('Formula/*.rb') != '' }}
+        run: |
+          brew style kenn-io/tap/agentsview kenn-io/tap/roborev
+          brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+          for formula in agentsview roborev; do
+            brew install "kenn-io/tap/${formula}"
+            brew test "kenn-io/tap/${formula}"
+          done
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: automation/update-formulae
+          delete-branch: true
+          title: "Update Homebrew formulae"
+          commit-message: "Update Homebrew formulae"
+          body: |
+            Automated hourly check found newer upstream release artifacts and updated the tap formulae.
+
+            Validation:
+            - `brew style kenn-io/tap/agentsview kenn-io/tap/roborev`
+            - `brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev`
+            - `brew install` and `brew test` for `agentsview` and `roborev`

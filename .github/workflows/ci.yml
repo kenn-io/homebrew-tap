@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  homebrew:
+    name: Homebrew (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      MISE_EXPERIMENTAL: "1"
+      MISE_LOCKED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up mise
+        uses: jdx/mise-action@v3
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+        with:
+          stable: true
+
+      - name: Check updater script syntax
+        run: mise exec --locked -- ruby -c scripts/update-formulae.rb
+
+      - name: Style
+        run: brew style kenn-io/tap/agentsview kenn-io/tap/roborev
+
+      - name: Audit
+        run: brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+
+      - name: Install and test
+        run: |
+          for formula in agentsview roborev; do
+            brew install "kenn-io/tap/${formula}"
+            brew test "kenn-io/tap/${formula}"
+          done
