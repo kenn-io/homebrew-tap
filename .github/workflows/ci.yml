@@ -40,10 +40,9 @@ jobs:
         with:
           stable: true
 
-      - name: Tap current checkout
+      - name: Verify current checkout tap
         run: |
-          brew untap kenn-io/tap || true
-          brew tap kenn-io/tap "$GITHUB_WORKSPACE"
+          ruby -e 'tap = File.realpath(`brew --repo kenn-io/tap`.strip); workspace = File.realpath(ENV.fetch("GITHUB_WORKSPACE")); abort "kenn-io/tap resolves to #{tap}, expected #{workspace}" unless tap == workspace; puts "kenn-io/tap -> #{tap}"'
 
       - name: Check updater script syntax
         run: mise exec --locked -- ruby -c scripts/update-formulae.rb
