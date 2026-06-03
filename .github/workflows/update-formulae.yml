@@ -42,14 +42,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      - name: Tap current checkout
+        run: |
+          brew untap kenn-io/tap || true
+          brew tap kenn-io/tap "$GITHUB_WORKSPACE"
+
       - name: Check formulae
         if: ${{ hashFiles('Formula/*.rb') != '' }}
         run: |
-          brew style Formula/agentsview.rb Formula/roborev.rb
-          brew audit --strict --formula Formula/agentsview.rb Formula/roborev.rb
-          for formula in Formula/agentsview.rb Formula/roborev.rb; do
-            brew install "${formula}"
-            brew test "${formula}"
+          brew style kenn-io/tap/agentsview kenn-io/tap/roborev
+          brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+          for formula in agentsview roborev; do
+            brew install "kenn-io/tap/${formula}"
+            brew test "kenn-io/tap/${formula}"
           done
 
       - name: Detect formula changes
@@ -106,6 +111,6 @@ jobs:
             Automated hourly check found newer upstream release artifacts and updated the tap formulae.
 
             Validation:
-            - `brew style Formula/agentsview.rb Formula/roborev.rb`
-            - `brew audit --strict --formula Formula/agentsview.rb Formula/roborev.rb`
+            - `brew style kenn-io/tap/agentsview kenn-io/tap/roborev`
+            - `brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev`
             - `brew install` and `brew test` for `agentsview` and `roborev`
