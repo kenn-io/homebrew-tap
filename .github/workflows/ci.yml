@@ -40,21 +40,18 @@ jobs:
         with:
           stable: true
 
-      - name: Tap current checkout
-        run: brew tap kenn-io/tap "$GITHUB_WORKSPACE"
-
       - name: Check updater script syntax
         run: mise exec --locked -- ruby -c scripts/update-formulae.rb
 
       - name: Style
-        run: brew style kenn-io/tap/agentsview kenn-io/tap/roborev
+        run: brew style Formula/agentsview.rb Formula/roborev.rb
 
       - name: Audit
-        run: brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+        run: brew audit --strict --formula Formula/agentsview.rb Formula/roborev.rb
 
       - name: Install and test
         run: |
-          for formula in agentsview roborev; do
-            brew install "kenn-io/tap/${formula}"
-            brew test "kenn-io/tap/${formula}"
+          for formula in Formula/agentsview.rb Formula/roborev.rb; do
+            brew install "${formula}"
+            brew test "${formula}"
           done
