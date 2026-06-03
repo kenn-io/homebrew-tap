@@ -6,35 +6,44 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   update:
     name: Check for new releases
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.changed.outputs.changed }}
     env:
       HOMEBREW_NO_ANALYTICS: "1"
       HOMEBREW_NO_ENV_HINTS: "1"
       MISE_EXPERIMENTAL: "1"
       MISE_LOCKED: "1"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Set up mise
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@a84a03efc108f7d05469800fd48890c1cd34a6ad
         with:
           stable: true
 
       - name: Update formulae from latest releases
         run: mise exec --locked -- ruby scripts/update-formulae.rb
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Tap current checkout
+        run: brew tap kenn-io/tap "$GITHUB_WORKSPACE"
 
       - name: Check formulae
         if: ${{ hashFiles('Formula/*.rb') != '' }}
@@ -46,9 +55,52 @@ jobs:
             brew test "kenn-io/tap/${formula}"
           done
 
-      - name: Create pull request
-        uses: peter-evans/create-pull-request@v6
+      - name: Detect formula changes
+        id: changed
+        run: |
+          if git diff --quiet -- Formula; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff --binary -- Formula > formula.patch
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload formula changes
+        if: steps.changed.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
+          name: formula-patch
+          path: formula.patch
+          if-no-files-found: error
+
+  create-pull-request:
+    name: Create update pull request
+    runs-on: ubuntu-latest
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Download formula changes
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: formula-patch
+          path: .
+
+      - name: Apply formula changes
+        run: git apply formula.patch
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        with:
+          token: ${{ github.token }}
           branch: automation/update-formulae
           delete-branch: true
           title: "Update Homebrew formulae"

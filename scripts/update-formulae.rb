@@ -5,6 +5,9 @@ require "json"
 require "net/http"
 require "uri"
 
+SEMVER_TAG_PATTERN = /\Av?\d+\.\d+\.\d+\z/
+SHA256_PATTERN = /\A[0-9a-f]{64}\z/i
+
 FormulaConfig = Struct.new(
   :name,
   :class_name,
@@ -89,9 +92,26 @@ end
 
 def asset_sha(asset)
   digest = asset.fetch("digest", "")
-  return digest.delete_prefix("sha256:") if digest.start_with?("sha256:")
+  sha256 = digest.delete_prefix("sha256:") if digest.start_with?("sha256:")
+  return sha256 if sha256&.match?(SHA256_PATTERN)
 
-  raise "Asset #{asset.fetch("name")} does not include a SHA-256 digest"
+  raise "Asset #{asset.fetch("name")} does not include a valid SHA-256 digest"
+end
+
+def release_version(tag_name)
+  raise "Release tag #{tag_name.inspect} is not a supported semver tag" unless tag_name.match?(SEMVER_TAG_PATTERN)
+
+  tag_name.delete_prefix("v")
+end
+
+def validate_asset_url!(config, tag_name, filename, url)
+  uri = URI(url)
+  expected_path = "/#{config.repo}/releases/download/#{tag_name}/#{filename}"
+  return if uri.scheme == "https" && uri.host == "github.com" && uri.path == expected_path && uri.query.nil?
+
+  raise "Asset #{filename} has unexpected download URL #{url.inspect}"
+rescue URI::InvalidURIError
+  raise "Asset #{filename} has invalid download URL #{url.inspect}"
 end
 
 def version_segments(version)
@@ -117,6 +137,7 @@ def newer_version?(latest, current)
 end
 
 def release_assets_by_platform(config, release, version)
+  tag_name = release.fetch("tag_name")
   assets = release.fetch("assets").to_h { |asset| [asset.fetch("name"), asset] }
 
   PLATFORMS.to_h do |platform, _metadata|
@@ -124,8 +145,14 @@ def release_assets_by_platform(config, release, version)
     asset = assets.fetch(filename) do
       raise "Release #{release.fetch("tag_name")} is missing #{filename}"
     end
-    [platform, { url: asset.fetch("browser_download_url"), sha256: asset_sha(asset) }]
+    url = asset.fetch("browser_download_url")
+    validate_asset_url!(config, tag_name, filename, url)
+    [platform, { url: url, sha256: asset_sha(asset) }]
   end
+end
+
+def ruby_string(value)
+  value.dump
 end
 
 def render_formula(config, version, assets)
@@ -137,35 +164,35 @@ def render_formula(config, version, assets)
 
   <<~RUBY
     class #{config.class_name} < Formula
-      desc "#{config.desc}"
-      homepage "#{config.homepage}"
-      version "#{version}"
+      desc #{ruby_string(config.desc)}
+      homepage #{ruby_string(config.homepage)}
+      version #{ruby_string(version)}
       license "MIT"
 
       on_macos do
         if Hardware::CPU.intel?
-          url "#{macos_intel.fetch(:url)}"
-          sha256 "#{macos_intel.fetch(:sha256)}"
+          url #{ruby_string(macos_intel.fetch(:url))}
+          sha256 #{ruby_string(macos_intel.fetch(:sha256))}
         end
         if Hardware::CPU.arm?
-          url "#{macos_arm.fetch(:url)}"
-          sha256 "#{macos_arm.fetch(:sha256)}"
+          url #{ruby_string(macos_arm.fetch(:url))}
+          sha256 #{ruby_string(macos_arm.fetch(:sha256))}
         end
       end
 
       on_linux do
         if Hardware::CPU.intel?
-          url "#{linux_intel.fetch(:url)}"
-          sha256 "#{linux_intel.fetch(:sha256)}"
+          url #{ruby_string(linux_intel.fetch(:url))}
+          sha256 #{ruby_string(linux_intel.fetch(:sha256))}
         end
         if Hardware::CPU.arm?
-          url "#{linux_arm.fetch(:url)}"
-          sha256 "#{linux_arm.fetch(:sha256)}"
+          url #{ruby_string(linux_arm.fetch(:url))}
+          sha256 #{ruby_string(linux_arm.fetch(:sha256))}
         end
       end
 
       def install
-        bin.install "#{config.name}"
+        bin.install #{ruby_string(config.name)}
       end
 
       def caveats
@@ -187,7 +214,7 @@ FORMULAE.each do |config|
   release = fetch_json("https://api.github.com/repos/#{config.repo}/releases/latest")
   next if release.fetch("draft") || release.fetch("prerelease")
 
-  latest_version = release.fetch("tag_name").delete_prefix("v")
+  latest_version = release_version(release.fetch("tag_name"))
   installed_version = current_version(config.path)
   next unless newer_version?(latest_version, installed_version)
 

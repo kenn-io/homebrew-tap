@@ -28,15 +28,20 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
 
       - name: Set up mise
-        uses: jdx/mise-action@v3
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@a84a03efc108f7d05469800fd48890c1cd34a6ad
         with:
           stable: true
+
+      - name: Tap current checkout
+        run: brew tap kenn-io/tap "$GITHUB_WORKSPACE"
 
       - name: Check updater script syntax
         run: mise exec --locked -- ruby -c scripts/update-formulae.rb
