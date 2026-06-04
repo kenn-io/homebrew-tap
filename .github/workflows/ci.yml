@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  homebrew:
+    name: Homebrew (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      MISE_EXPERIMENTAL: "1"
+      MISE_LOCKED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@a84a03efc108f7d05469800fd48890c1cd34a6ad
+        with:
+          stable: true
+
+      - name: Verify current checkout tap
+        run: |
+          ruby -e 'tap = File.realpath(`brew --repo kenn-io/tap`.strip); workspace = File.realpath(ENV.fetch("GITHUB_WORKSPACE")); abort "kenn-io/tap resolves to #{tap}, expected #{workspace}" unless tap == workspace; puts "kenn-io/tap -> #{tap}"'
+
+      - name: Check updater script syntax
+        run: mise exec --locked -- ruby -c scripts/update-formulae.rb
+
+      - name: Style
+        run: brew style kenn-io/tap/agentsview kenn-io/tap/roborev
+
+      - name: Audit
+        run: brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+
+      - name: Install and test
+        run: |
+          for formula in agentsview roborev; do
+            brew install "kenn-io/tap/${formula}"
+            brew test "kenn-io/tap/${formula}"
+          done
