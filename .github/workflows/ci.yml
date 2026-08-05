@@ -42,16 +42,28 @@ jobs:
 
       - name: Verify current checkout tap
         run: |
+          # shellcheck disable=SC2016
           ruby -e 'tap = File.realpath(`brew --repo kenn-io/tap`.strip); workspace = File.realpath(ENV.fetch("GITHUB_WORKSPACE")); abort "kenn-io/tap resolves to #{tap}, expected #{workspace}" unless tap == workspace; puts "kenn-io/tap -> #{tap}"'
 
-      - name: Check updater script syntax
-        run: mise exec --locked -- ruby -c scripts/update-formulae.rb
+      - name: Check updater scripts
+        run: |
+          mise exec --locked -- ruby -c scripts/update-formulae.rb
+          mise exec --locked -- ruby -c scripts/ghosthub_cask.rb
+          mise exec --locked -- ruby -c scripts/update-ghosthub-cask.rb
+          mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
+
+      - name: Check app identity verifier
+        if: runner.os == 'macOS'
+        run: mise exec --locked -- ruby -Itest test/verify_ghosthub_app_test.rb
 
       - name: Style
         run: brew style kenn-io/tap/agentsview kenn-io/tap/roborev
 
       - name: Audit
-        run: brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+        # These multi-platform formulae intentionally declare one version used
+        # to construct every platform URL. Skip only the redundant-version
+        # advisory while retaining all other strict audit methods.
+        run: brew audit --strict --except=version --formula kenn-io/tap/agentsview kenn-io/tap/roborev
 
       - name: Install and test
         run: |

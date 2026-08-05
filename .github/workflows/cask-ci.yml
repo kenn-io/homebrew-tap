@@ -1,0 +1,98 @@
+name: Ghosthub Cask CI
+
+on:
+  pull_request:
+    paths:
+      - "Casks/ghosthub.rb"
+      - "scripts/ghosthub_cask.rb"
+      - "scripts/update-ghosthub-cask.rb"
+      - "scripts/verify-ghosthub-app.sh"
+      - "scripts/verify-ghosthub-release.sh"
+      - "test/ghosthub_cask_test.rb"
+      - "test/verify_ghosthub_app_test.rb"
+      - ".mise.toml"
+      - "mise.lock"
+      - ".github/workflows/cask-ci.yml"
+      - ".github/workflows/update-casks.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "Casks/ghosthub.rb"
+      - "scripts/ghosthub_cask.rb"
+      - "scripts/update-ghosthub-cask.rb"
+      - "scripts/verify-ghosthub-app.sh"
+      - "scripts/verify-ghosthub-release.sh"
+      - "test/ghosthub_cask_test.rb"
+      - "test/verify_ghosthub_app_test.rb"
+      - ".mise.toml"
+      - "mise.lock"
+      - ".github/workflows/cask-ci.yml"
+      - ".github/workflows/update-casks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cask:
+    name: Verify notarized Ghosthub cask
+    runs-on: macos-26
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      MISE_EXPERIMENTAL: "1"
+      MISE_LOCKED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@a84a03efc108f7d05469800fd48890c1cd34a6ad
+        with:
+          stable: true
+
+      - name: Verify Apple Silicon runner and current tap
+        run: |
+          test "$(uname -m)" = arm64
+          # shellcheck disable=SC2016
+          ruby -e 'tap = File.realpath(`brew --repo kenn-io/tap`.strip); workspace = File.realpath(ENV.fetch("GITHUB_WORKSPACE")); abort "kenn-io/tap resolves to #{tap}, expected #{workspace}" unless tap == workspace; puts "kenn-io/tap -> #{tap}"'
+
+      - name: Check release model
+        run: |
+          mise exec --locked -- ruby -c scripts/ghosthub_cask.rb
+          mise exec --locked -- ruby -c scripts/update-ghosthub-cask.rb
+          mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
+          mise exec --locked -- ruby -Itest test/verify_ghosthub_app_test.rb
+
+      - name: Verify published release
+        run: |
+          mise exec --locked -- ruby scripts/update-ghosthub-cask.rb current ghosthub-release.json
+          scripts/verify-ghosthub-release.sh ghosthub-release.json
+          version="$(mise exec --locked -- ruby -I. -rscripts/ghosthub_cask -e 'puts GhosthubCask.load_metadata(File.read("ghosthub-release.json")).version')"
+          echo "GHOSTHUB_RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Validate cask
+        run: |
+          brew style --cask kenn-io/tap/ghosthub
+          brew audit --strict --online --cask kenn-io/tap/ghosthub
+          brew livecheck --cask kenn-io/tap/ghosthub
+
+      - name: Install and verify cask
+        run: |
+          HOMEBREW_NO_INSTALL_FROM_API=1 brew install --cask kenn-io/tap/ghosthub
+          scripts/verify-ghosthub-app.sh /Applications/Ghosthub.app "$GHOSTHUB_RELEASE_VERSION"
+          HOMEBREW_NO_INSTALL_FROM_API=1 brew uninstall --cask kenn-io/tap/ghosthub
+
+      - name: Clean up Ghosthub
+        if: always()
+        run: |
+          if brew list --cask ghosthub >/dev/null 2>&1; then
+            HOMEBREW_NO_INSTALL_FROM_API=1 brew uninstall --cask ghosthub
+          fi
