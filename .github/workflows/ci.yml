@@ -56,7 +56,10 @@ jobs:
         run: brew style kenn-io/tap/agentsview kenn-io/tap/roborev
 
       - name: Audit
-        run: brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+        # These multi-platform formulae intentionally declare one version used
+        # to construct every platform URL. Skip only the redundant-version
+        # advisory while retaining all other strict audit methods.
+        run: brew audit --strict --except=version --formula kenn-io/tap/agentsview kenn-io/tap/roborev
 
       - name: Install and test
         run: |
