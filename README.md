@@ -1,9 +1,27 @@
-# Homebrew Taps
+# Homebrew Tap
 
-Custom Homebrew formulas.
+Custom Homebrew formulae and casks.
 
 The old `wesm/taps` tap is deprecated for these formulae. Use `kenn-io/tap`
 for new installs and updates.
+
+## Available Casks
+
+### Ghosthub
+
+[Ghosthub](https://ghosthub.ai/) is a native macOS terminal for local and
+remote tmux fleets. It requires Apple Silicon and macOS 26 or newer.
+
+**Install:**
+```bash
+brew install kenn-io/tap/ghosthub
+```
+
+Or tap first, then install:
+```bash
+brew tap kenn-io/tap
+brew install ghosthub
+```
 
 ## Available Formulas
 
