@@ -1,0 +1,184 @@
+name: Update Casks
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check for a newer Ghosthub release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.changed.outputs.changed }}
+    env:
+      MISE_EXPERIMENTAL: "1"
+      MISE_LOCKED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+
+      - name: Check release model
+        run: mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
+
+      - name: Check latest stable release
+        run: mise exec --locked -- ruby scripts/update-ghosthub-cask.rb check ghosthub-release.json
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Detect newer release
+        id: changed
+        run: |
+          if [[ -f ghosthub-release.json ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload release metadata
+        if: steps.changed.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ghosthub-release-metadata
+          path: ghosthub-release.json
+          if-no-files-found: error
+
+  validate:
+    name: Verify and package Ghosthub cask update
+    needs: check
+    if: needs.check.outputs.changed == 'true'
+    runs-on: macos-26
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      MISE_EXPERIMENTAL: "1"
+      MISE_LOCKED: "1"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@a84a03efc108f7d05469800fd48890c1cd34a6ad
+        with:
+          stable: true
+
+      - name: Download release metadata
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ghosthub-release-metadata
+          path: .
+
+      - name: Verify Apple Silicon runner and current tap
+        run: |
+          test "$(uname -m)" = arm64
+          # shellcheck disable=SC2016
+          ruby -e 'tap = File.realpath(`brew --repo kenn-io/tap`.strip); workspace = File.realpath(ENV.fetch("GITHUB_WORKSPACE")); abort "kenn-io/tap resolves to #{tap}, expected #{workspace}" unless tap == workspace; puts "kenn-io/tap -> #{tap}"'
+
+      - name: Verify published release
+        run: scripts/verify-ghosthub-release.sh ghosthub-release.json
+
+      - name: Read release version
+        id: release
+        run: |
+          version="$(mise exec --locked -- ruby -I. -rscripts/ghosthub_cask -e 'puts GhosthubCask.load_metadata(File.read("ghosthub-release.json")).version')"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Render cask
+        run: mise exec --locked -- ruby scripts/update-ghosthub-cask.rb render ghosthub-release.json
+
+      - name: Validate cask
+        run: |
+          brew style --cask kenn-io/tap/ghosthub
+          brew audit --strict --online --cask kenn-io/tap/ghosthub
+          brew livecheck --cask kenn-io/tap/ghosthub
+
+      - name: Install and verify cask
+        run: |
+          HOMEBREW_NO_INSTALL_FROM_API=1 brew install --cask kenn-io/tap/ghosthub
+          scripts/verify-ghosthub-app.sh /Applications/Ghosthub.app
+          HOMEBREW_NO_INSTALL_FROM_API=1 brew uninstall --cask kenn-io/tap/ghosthub
+
+      - name: Create cask patch
+        run: |
+          git diff --binary -- Casks/ghosthub.rb > ghosthub-cask.patch
+          test -s ghosthub-cask.patch
+
+      - name: Upload cask patch
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ghosthub-cask-patch
+          path: ghosthub-cask.patch
+          if-no-files-found: error
+
+      - name: Clean up Ghosthub
+        if: always()
+        run: |
+          if brew list --cask ghosthub >/dev/null 2>&1; then
+            HOMEBREW_NO_INSTALL_FROM_API=1 brew uninstall --cask ghosthub
+          fi
+
+  create-pull-request:
+    name: Create Ghosthub cask update pull request
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Set up mise
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+
+      - name: Download cask patch
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ghosthub-cask-patch
+          path: .
+
+      - name: Apply and verify cask patch
+        run: |
+          git apply ghosthub-cask.patch
+          version="$(mise exec --locked -- ruby -I. -rscripts/ghosthub_cask -e 'puts GhosthubCask.parse_current_cask(File.read(GhosthubCask::CASK_PATH)).version')"
+          test "$version" = "${{ needs.validate.outputs.version }}"
+
+      # GITHUB_TOKEN-created PRs may leave ordinary PR CI waiting for maintainer
+      # approval. The successful validate job above is authoritative test evidence.
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
+        with:
+          token: ${{ github.token }}
+          branch: automation/update-ghosthub-cask
+          delete-branch: true
+          title: "Update Ghosthub cask to ${{ needs.validate.outputs.version }}"
+          commit-message: "Update Ghosthub cask to ${{ needs.validate.outputs.version }}"
+          body: |
+            A newer stable Ghosthub release is available for the Homebrew tap.
+
+            Before this pull request was created, the exact SHA-pinned DMG passed staple validation, DMG and app Gatekeeper assessment, signing-identity checks, Homebrew audit and livecheck, install, installed-app verification, and uninstall on Apple Silicon macOS 26.

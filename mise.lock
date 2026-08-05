@@ -4,6 +4,12 @@
 version = "3.4.5"
 backend = "core:ruby"
 
+[tools.ruby.options]
+compile = "false"
+precompiled_url = "jdx/ruby"
+ruby_build_repo = "https://github.com/rbenv/ruby-build.git"
+ruby_install = "false"
+
 [tools.ruby."platforms.linux-x64"]
 checksum = "sha256:5531aba181a0d71409279b729d8026d75779de9ee9f1b7ff736049e27c46064e"
 url = "https://github.com/jdx/ruby/releases/download/3.4.5-3/ruby-3.4.5.x86_64_linux.tar.gz"
