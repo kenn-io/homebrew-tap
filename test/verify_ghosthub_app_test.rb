@@ -8,7 +8,7 @@ require "tmpdir"
 class VerifyGhosthubAppTest < Minitest::Test
   SCRIPT = File.expand_path("../scripts/verify-ghosthub-app.sh", __dir__)
 
-  def run_verifier(signature_details)
+  def run_verifier(signature_details, short_version: "0.6.0", build_version: "62")
     Dir.mktmpdir("verify-ghosthub-app") do |directory|
       app_path = File.join(directory, "Ghosthub.app")
       contents_path = File.join(app_path, "Contents")
@@ -24,6 +24,10 @@ class VerifyGhosthubAppTest < Minitest::Test
           <dict>
             <key>CFBundleIdentifier</key>
             <string>com.ghosthub</string>
+            <key>CFBundleShortVersionString</key>
+            <string>#{short_version}</string>
+            <key>CFBundleVersion</key>
+            <string>#{build_version}</string>
           </dict>
           </plist>
         PLIST
@@ -54,6 +58,7 @@ class VerifyGhosthubAppTest < Minitest::Test
         },
         SCRIPT,
         app_path,
+        "0.6.0",
       )
     end
   end
@@ -91,6 +96,33 @@ class VerifyGhosthubAppTest < Minitest::Test
     DETAILS
 
     assert status.success?, stderr
-    assert_includes stdout, "bundle=com.ghosthub team=2YMZH84KR8"
+    assert_includes stdout, "bundle=com.ghosthub version=0.6.0 build=62 team=2YMZH84KR8"
+  end
+
+  def test_rejects_a_signed_app_from_an_older_release
+    _stdout, stderr, status = run_verifier(
+      <<~DETAILS,
+        Identifier=com.ghosthub
+        TeamIdentifier=2YMZH84KR8
+      DETAILS
+      short_version: "0.5.3",
+      build_version: "55",
+    )
+
+    refute status.success?
+    assert_includes stderr, "unexpected Ghosthub app version"
+  end
+
+  def test_rejects_an_invalid_build_version
+    _stdout, stderr, status = run_verifier(
+      <<~DETAILS,
+        Identifier=com.ghosthub
+        TeamIdentifier=2YMZH84KR8
+      DETAILS
+      build_version: "not-a-build-number",
+    )
+
+    refute status.success?
+    assert_includes stderr, "invalid Ghosthub app build version"
   end
 end

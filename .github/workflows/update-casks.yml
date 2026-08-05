@@ -117,7 +117,7 @@ jobs:
       - name: Install and verify cask
         run: |
           HOMEBREW_NO_INSTALL_FROM_API=1 brew install --cask kenn-io/tap/ghosthub
-          scripts/verify-ghosthub-app.sh /Applications/Ghosthub.app
+          scripts/verify-ghosthub-app.sh /Applications/Ghosthub.app "${{ steps.release.outputs.version }}"
           HOMEBREW_NO_INSTALL_FROM_API=1 brew uninstall --cask kenn-io/tap/ghosthub
 
       - name: Create cask patch

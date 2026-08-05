@@ -26,10 +26,10 @@ metadata=$(
   cd "$repo_root"
   "$mise_bin" exec --locked -- ruby -I. -rscripts/ghosthub_cask -e '
     release = GhosthubCask.load_metadata(File.read(ARGV.fetch(0)))
-    puts [release.url, release.sha256, release.filename].join("\t")
+    puts [release.url, release.sha256, release.filename, release.version].join("\t")
   ' "$metadata_path"
 )
-IFS=$'\t' read -r download_url expected_sha filename <<< "$metadata"
+IFS=$'\t' read -r download_url expected_sha filename expected_version <<< "$metadata"
 
 temp_dir=$(mktemp -d "${TMPDIR:-/tmp}/ghosthub-release.XXXXXX")
 mountpoint="$temp_dir/mount"
@@ -76,7 +76,7 @@ if [[ "$app_count" != "1" || ! -d "$app_path" ]]; then
   exit 1
 fi
 
-"$script_dir/verify-ghosthub-app.sh" "$app_path"
+"$script_dir/verify-ghosthub-app.sh" "$app_path" "$expected_version"
 
 hdiutil detach "$mountpoint" >/dev/null
 mounted=false

@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ $# -ne 1 ]]; then
-  echo "usage: verify-ghosthub-app.sh APP_PATH" >&2
+if [[ $# -ne 2 ]]; then
+  echo "usage: verify-ghosthub-app.sh APP_PATH EXPECTED_VERSION" >&2
   exit 2
 fi
 
 app_path=$1
+expected_version=$2
+if [[ ! "$expected_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "invalid expected Ghosthub version: $expected_version" >&2
+  exit 2
+fi
+
 if [[ ! -d "$app_path" || ! -f "$app_path/Contents/Info.plist" ]]; then
   echo "Ghosthub app bundle not found at $app_path" >&2
   exit 1
@@ -34,6 +40,18 @@ if [[ "$bundle_id" != "com.ghosthub" ]]; then
   exit 1
 fi
 
+app_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app_path/Contents/Info.plist")
+if [[ "$app_version" != "$expected_version" ]]; then
+  echo "unexpected Ghosthub app version: expected $expected_version, got $app_version" >&2
+  exit 1
+fi
+
+build_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app_path/Contents/Info.plist")
+if [[ ! "$build_version" =~ ^[0-9]+$ ]]; then
+  echo "invalid Ghosthub app build version: $build_version" >&2
+  exit 1
+fi
+
 signature_output=$(codesign -dv --verbose=4 "$app_path" 2>&1)
 echo "$signature_output"
 signed_bundle_id=$(printf '%s\n' "$signature_output" | sed -n 's/^Identifier=//p')
@@ -48,4 +66,4 @@ if [[ "$team_id" != "2YMZH84KR8" ]]; then
   exit 1
 fi
 
-echo "Verified notarized Ghosthub app: bundle=$bundle_id team=2YMZH84KR8"
+echo "Verified notarized Ghosthub app: bundle=$bundle_id version=$app_version build=$build_version team=2YMZH84KR8"

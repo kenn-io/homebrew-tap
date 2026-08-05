@@ -75,6 +75,8 @@ jobs:
         run: |
           mise exec --locked -- ruby scripts/update-ghosthub-cask.rb current ghosthub-release.json
           scripts/verify-ghosthub-release.sh ghosthub-release.json
+          version="$(mise exec --locked -- ruby -I. -rscripts/ghosthub_cask -e 'puts GhosthubCask.load_metadata(File.read("ghosthub-release.json")).version')"
+          echo "GHOSTHUB_RELEASE_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Validate cask
         run: |
@@ -85,7 +87,7 @@ jobs:
       - name: Install and verify cask
         run: |
           HOMEBREW_NO_INSTALL_FROM_API=1 brew install --cask kenn-io/tap/ghosthub
-          scripts/verify-ghosthub-app.sh /Applications/Ghosthub.app
+          scripts/verify-ghosthub-app.sh /Applications/Ghosthub.app "$GHOSTHUB_RELEASE_VERSION"
           HOMEBREW_NO_INSTALL_FROM_API=1 brew uninstall --cask kenn-io/tap/ghosthub
 
       - name: Clean up Ghosthub
