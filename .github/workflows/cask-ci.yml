@@ -9,6 +9,7 @@ on:
       - "scripts/verify-ghosthub-app.sh"
       - "scripts/verify-ghosthub-release.sh"
       - "test/ghosthub_cask_test.rb"
+      - "test/verify_ghosthub_app_test.rb"
       - ".mise.toml"
       - "mise.lock"
       - ".github/workflows/cask-ci.yml"
@@ -23,6 +24,7 @@ on:
       - "scripts/verify-ghosthub-app.sh"
       - "scripts/verify-ghosthub-release.sh"
       - "test/ghosthub_cask_test.rb"
+      - "test/verify_ghosthub_app_test.rb"
       - ".mise.toml"
       - "mise.lock"
       - ".github/workflows/cask-ci.yml"
@@ -67,6 +69,7 @@ jobs:
           mise exec --locked -- ruby -c scripts/ghosthub_cask.rb
           mise exec --locked -- ruby -c scripts/update-ghosthub-cask.rb
           mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
+          mise exec --locked -- ruby -Itest test/verify_ghosthub_app_test.rb
 
       - name: Verify published release
         run: |

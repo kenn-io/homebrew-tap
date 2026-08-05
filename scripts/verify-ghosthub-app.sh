@@ -36,8 +36,15 @@ fi
 
 signature_output=$(codesign -dv --verbose=4 "$app_path" 2>&1)
 echo "$signature_output"
-if [[ "$signature_output" != *"TeamIdentifier=2YMZH84KR8"* ]]; then
-  echo "Ghosthub is not signed by Team Identifier 2YMZH84KR8" >&2
+signed_bundle_id=$(printf '%s\n' "$signature_output" | sed -n 's/^Identifier=//p')
+if [[ "$signed_bundle_id" != "com.ghosthub" ]]; then
+  echo "unexpected signed bundle identifier: $signed_bundle_id" >&2
+  exit 1
+fi
+
+team_id=$(printf '%s\n' "$signature_output" | sed -n 's/^TeamIdentifier=//p')
+if [[ "$team_id" != "2YMZH84KR8" ]]; then
+  echo "unexpected signing Team Identifier: $team_id" >&2
   exit 1
 fi
 
