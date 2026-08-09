@@ -16,7 +16,10 @@ FormulaConfig = Struct.new(
   :homepage,
   :repo,
   :artifact_prefix,
+  :artifact_infix,
+  :minimum_version,
   :version_command,
+  :test_lines,
   :caveats,
   keyword_init: true,
 )
@@ -57,6 +60,24 @@ FORMULAE = [
       For more info: https://roborev.io/quickstart/
     EOS
   ),
+  FormulaConfig.new(
+    name: "kata",
+    class_name: "Kata",
+    path: "Formula/kata.rb",
+    desc: "Git-native issue tracking for agentic development",
+    homepage: "https://katatracker.com",
+    repo: "kenn-io/kata",
+    artifact_prefix: "kata",
+    artifact_infix: "homebrew",
+    minimum_version: "0.14.2",
+    test_lines: [
+      'info = shell_output("#{bin}/kata version --json")',
+      'assert_match %Q("version":"v#{version}"), info',
+      'assert_match %Q("distribution":"homebrew"), info',
+      'system bin/"kata", "_web-assets-check"',
+      'assert_match "brew upgrade kata", shell_output("#{bin}/kata update --yes 2>&1", 2)',
+    ],
+  ),
 ].freeze
 
 PLATFORMS = {
@@ -88,6 +109,8 @@ def current_version(path)
   raise "Could not find version in #{path}" unless match
 
   match[1]
+rescue Errno::ENOENT
+  nil
 end
 
 def asset_sha(asset)
@@ -115,36 +138,50 @@ rescue URI::InvalidURIError
 end
 
 def version_segments(version)
-  version.split(/[.-]/).map { |segment| segment.match?(/\A\d+\z/) ? segment.to_i : segment }
+  version.split(".").map(&:to_i)
+end
+
+def compare_versions(left, right)
+  version_segments(left) <=> version_segments(right)
 end
 
 def newer_version?(latest, current)
-  latest_segments = version_segments(latest)
-  current_segments = version_segments(current)
-  max_length = [latest_segments.length, current_segments.length].max
+  compare_versions(latest, current).positive?
+end
 
-  (0...max_length).each do |index|
-    left = latest_segments[index] || 0
-    right = current_segments[index] || 0
-    next if left == right
+def release_action(config, release, current)
+  return :ignore if release.fetch("draft") || release.fetch("prerelease")
 
-    return left.to_s > right.to_s unless left.is_a?(Integer) && right.is_a?(Integer)
+  latest = release_version(release.fetch("tag_name"))
+  return :ignore if config.minimum_version && compare_versions(latest, config.minimum_version).negative?
+  return :update if current.nil?
 
-    return left > right
+  comparison = compare_versions(latest, current)
+  if comparison.negative?
+    raise "refusing to downgrade #{config.name} from #{current} to #{latest}"
   end
 
-  false
+  return :current if comparison.zero?
+
+  :update
+end
+
+def artifact_filename(config, version, platform)
+  [config.artifact_prefix, version, config.artifact_infix, platform].compact.join("_") + ".tar.gz"
 end
 
 def release_assets_by_platform(config, release, version)
   tag_name = release.fetch("tag_name")
-  assets = release.fetch("assets").to_h { |asset| [asset.fetch("name"), asset] }
+  assets = release.fetch("assets").group_by { |asset| asset.fetch("name") }
 
   PLATFORMS.to_h do |platform, _metadata|
-    filename = "#{config.artifact_prefix}_#{version}_#{platform}.tar.gz"
-    asset = assets.fetch(filename) do
-      raise "Release #{release.fetch("tag_name")} is missing #{filename}"
+    filename = artifact_filename(config, version, platform)
+    matching_assets = assets.fetch(filename, [])
+    unless matching_assets.one?
+      raise "Release #{tag_name} must include exactly one #{filename}; found #{matching_assets.length}"
     end
+
+    asset = matching_assets.first
     url = asset.fetch("browser_download_url")
     validate_asset_url!(config, tag_name, filename, url)
     [platform, { url: url, sha256: asset_sha(asset) }]
@@ -160,9 +197,22 @@ def render_formula(config, version, assets)
   macos_arm = assets.fetch(:darwin_arm64)
   linux_intel = assets.fetch(:linux_amd64)
   linux_arm = assets.fetch(:linux_arm64)
-  caveats = config.caveats.each_line.map { |line| "      #{line}" }.join
+  caveats_block = if config.caveats
+    caveats = config.caveats.lines(chomp: true).map { |line| line.empty? ? "" : "      #{line}" }.join("\n")
+    <<~RUBY
+      def caveats
+        <<~EOS
+    #{caveats}
+        EOS
+      end
+    RUBY
+  end
+  test_lines = config.test_lines || [
+    %(assert_match version.to_s, shell_output("\#{bin}/#{config.version_command}")),
+  ]
+  test_body = test_lines.map { |line| "    #{line}" }.join("\n")
 
-  <<~RUBY
+  formula = <<~RUBY
     class #{config.class_name} < Formula
       desc #{ruby_string(config.desc)}
       homepage #{ruby_string(config.homepage)}
@@ -194,38 +244,38 @@ def render_formula(config, version, assets)
       def install
         bin.install #{ruby_string(config.name)}
       end
-
-      def caveats
-        <<~EOS
-    #{caveats.chomp}
-        EOS
-      end
+  RUBY
+  formula << "\n#{caveats_block}" if caveats_block
+  formula << <<~RUBY
 
       test do
-        assert_match version.to_s, shell_output("\#{bin}/#{config.version_command}")
+    #{test_body}
       end
     end
   RUBY
+  formula
 end
 
-updated = []
+def run
+  updated = []
 
-FORMULAE.each do |config|
-  release = fetch_json("https://api.github.com/repos/#{config.repo}/releases/latest")
-  next if release.fetch("draft") || release.fetch("prerelease")
+  FORMULAE.each do |config|
+    release = fetch_json("https://api.github.com/repos/#{config.repo}/releases/latest")
+    installed_version = current_version(config.path)
+    next unless release_action(config, release, installed_version) == :update
 
-  latest_version = release_version(release.fetch("tag_name"))
-  installed_version = current_version(config.path)
-  next unless newer_version?(latest_version, installed_version)
+    latest_version = release_version(release.fetch("tag_name"))
+    assets = release_assets_by_platform(config, release, latest_version)
+    File.write(config.path, render_formula(config, latest_version, assets))
+    updated << "#{config.name} #{installed_version || "not installed"} -> #{latest_version}"
+  end
 
-  assets = release_assets_by_platform(config, release, latest_version)
-  File.write(config.path, render_formula(config, latest_version, assets))
-  updated << "#{config.name} #{installed_version} -> #{latest_version}"
+  if updated.empty?
+    puts "No formula updates available."
+  else
+    puts "Updated formulae:"
+    updated.each { |line| puts "  #{line}" }
+  end
 end
 
-if updated.empty?
-  puts "No formula updates available."
-else
-  puts "Updated formulae:"
-  updated.each { |line| puts "  #{line}" }
-end
+run if $PROGRAM_NAME == __FILE__

@@ -2,6 +2,8 @@ name: Update Formulae
 
 on:
   schedule:
+    # A failed run and GitHub's failed-workflow notification are the
+    # maintainer alert for a broken cross-repository archive contract.
     - cron: "0 * * * *"
   workflow_dispatch:
 
@@ -37,6 +39,9 @@ jobs:
         with:
           stable: true
 
+      - name: Check formula updater
+        run: mise exec --locked -- ruby -Itest test/update_formulae_test.rb
+
       - name: Update formulae from latest releases
         run: mise exec --locked -- ruby scripts/update-formulae.rb
         env:
@@ -50,11 +55,15 @@ jobs:
       - name: Check formulae
         if: ${{ hashFiles('Formula/*.rb') != '' }}
         run: |
-          brew style kenn-io/tap/agentsview kenn-io/tap/roborev
-          brew audit --strict --except=version --formula kenn-io/tap/agentsview kenn-io/tap/roborev
-          for formula in agentsview roborev; do
-            brew install "kenn-io/tap/${formula}"
-            brew test "kenn-io/tap/${formula}"
+          formulae=()
+          for path in Formula/*.rb; do
+            formulae+=("kenn-io/tap/$(basename "$path" .rb)")
+          done
+          brew style "${formulae[@]}"
+          brew audit --strict --except=version --formula "${formulae[@]}"
+          for formula in "${formulae[@]}"; do
+            brew install "$formula"
+            brew test "$formula"
           done
 
       - name: Detect formula changes
@@ -110,7 +119,4 @@ jobs:
           body: |
             Automated hourly check found newer upstream release artifacts and updated the tap formulae.
 
-            Validation:
-            - `brew style kenn-io/tap/agentsview kenn-io/tap/roborev`
-            - `brew audit --strict --formula kenn-io/tap/agentsview kenn-io/tap/roborev`
-            - `brew install` and `brew test` for `agentsview` and `roborev`
+            The updater validated every present formula with Homebrew style, strict audit, install, and test checks before creating this pull request.

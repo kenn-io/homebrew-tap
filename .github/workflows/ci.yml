@@ -48,6 +48,7 @@ jobs:
       - name: Check updater scripts
         run: |
           mise exec --locked -- ruby -c scripts/update-formulae.rb
+          mise exec --locked -- ruby -Itest test/update_formulae_test.rb
           mise exec --locked -- ruby -c scripts/ghosthub_cask.rb
           mise exec --locked -- ruby -c scripts/update-ghosthub-cask.rb
           mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
@@ -57,17 +58,31 @@ jobs:
         run: mise exec --locked -- ruby -Itest test/verify_ghosthub_app_test.rb
 
       - name: Style
-        run: brew style kenn-io/tap/agentsview kenn-io/tap/roborev
+        run: |
+          formulae=()
+          for path in Formula/*.rb; do
+            formulae+=("kenn-io/tap/$(basename "$path" .rb)")
+          done
+          brew style "${formulae[@]}"
 
       - name: Audit
         # These multi-platform formulae intentionally declare one version used
         # to construct every platform URL. Skip only the redundant-version
         # advisory while retaining all other strict audit methods.
-        run: brew audit --strict --except=version --formula kenn-io/tap/agentsview kenn-io/tap/roborev
+        run: |
+          formulae=()
+          for path in Formula/*.rb; do
+            formulae+=("kenn-io/tap/$(basename "$path" .rb)")
+          done
+          brew audit --strict --except=version --formula "${formulae[@]}"
 
       - name: Install and test
         run: |
-          for formula in agentsview roborev; do
-            brew install "kenn-io/tap/${formula}"
-            brew test "kenn-io/tap/${formula}"
+          formulae=()
+          for path in Formula/*.rb; do
+            formulae+=("kenn-io/tap/$(basename "$path" .rb)")
+          done
+          for formula in "${formulae[@]}"; do
+            brew install "$formula"
+            brew test "$formula"
           done
