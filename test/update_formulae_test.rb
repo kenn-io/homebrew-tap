@@ -4,6 +4,7 @@ require "minitest/autorun"
 require "fileutils"
 require "open3"
 require "rbconfig"
+require "tmpdir"
 require_relative "../scripts/update-formulae"
 
 class UpdateFormulaeTest < Minitest::Test
