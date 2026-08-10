@@ -153,8 +153,11 @@ def release_action(config, release, current)
   return :ignore if release.fetch("draft") || release.fetch("prerelease")
 
   latest = release_version(release.fetch("tag_name"))
-  return :ignore if config.minimum_version && compare_versions(latest, config.minimum_version).negative?
-  return :update if current.nil?
+  if current.nil?
+    return :ignore if config.minimum_version && compare_versions(latest, config.minimum_version).negative?
+
+    return :update
+  end
 
   comparison = compare_versions(latest, current)
   if comparison.negative?

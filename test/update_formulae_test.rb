@@ -81,6 +81,14 @@ class UpdateFormulaeTest < Minitest::Test
     assert_equal :update, release_action(kata_config, release("v0.14.2"), nil)
   end
 
+  def test_installed_kata_rejects_a_release_below_the_bootstrap_floor
+    error = assert_raises(RuntimeError) do
+      release_action(kata_config, release("v0.14.1"), "0.14.2")
+    end
+
+    assert_match "refusing to downgrade kata from 0.14.2 to 0.14.1", error.message
+  end
+
   def test_equal_release_is_current_and_older_release_is_rejected
     assert_equal :current, release_action(kata_config, release("v0.14.2"), "0.14.2")
 
