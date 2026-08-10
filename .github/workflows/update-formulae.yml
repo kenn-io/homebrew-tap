@@ -111,9 +111,10 @@ jobs:
       - name: Create pull request
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           branch: automation/update-formulae
           delete-branch: true
+          add-paths: Formula/*.rb
           title: "Update Homebrew formulae"
           commit-message: "Update Homebrew formulae"
           body: |
