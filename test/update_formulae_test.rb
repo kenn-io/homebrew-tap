@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "minitest/autorun"
+require "fileutils"
 require "open3"
 require "rbconfig"
 require_relative "../scripts/update-formulae"
@@ -30,6 +31,29 @@ class UpdateFormulaeTest < Minitest::Test
 
     assert status.success?, stderr
     assert_equal "loaded\n", stdout
+  end
+
+  def test_formula_patch_includes_a_new_untracked_formula
+    Dir.mktmpdir("formula-patch-test") do |repo|
+      FileUtils.mkdir_p(File.join(repo, "Formula"))
+      File.write(File.join(repo, "Formula", "agentsview.rb"), "class Agentsview < Formula\nend\n")
+      run_git(repo, "init")
+      run_git(repo, "config", "user.name", "Test User")
+      run_git(repo, "config", "user.email", "test@example.com")
+      run_git(repo, "add", "Formula/agentsview.rb")
+      run_git(repo, "commit", "-m", "Initial formula")
+
+      File.write(File.join(repo, "Formula", "kata.rb"), "class Kata < Formula\nend\n")
+      patch_path = File.join(repo, "formula.patch")
+      script = File.expand_path("../scripts/create-formula-patch.sh", __dir__)
+
+      _stdout, stderr, status = Open3.capture3("bash", script, patch_path, chdir: repo)
+
+      assert status.success?, stderr
+      patch = File.read(patch_path)
+      assert_includes patch, "diff --git a/Formula/kata.rb b/Formula/kata.rb"
+      assert_includes patch, "+class Kata < Formula"
+    end
   end
 
   def test_kata_configuration_uses_the_documented_archive_contract
@@ -178,5 +202,10 @@ class UpdateFormulaeTest < Minitest::Test
         sha256: "a" * 64,
       }]
     end
+  end
+
+  def run_git(repo, *args)
+    _stdout, stderr, status = Open3.capture3("git", *args, chdir: repo)
+    assert status.success?, stderr
   end
 end

@@ -69,11 +69,11 @@ jobs:
       - name: Detect formula changes
         id: changed
         run: |
-          if git diff --quiet -- Formula; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            git diff --binary -- Formula > formula.patch
+          bash scripts/create-formula-patch.sh formula.patch
+          if [[ -s formula.patch ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload formula changes
