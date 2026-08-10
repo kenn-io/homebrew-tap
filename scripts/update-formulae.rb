@@ -73,7 +73,7 @@ FORMULAE = [
     test_lines: [
       'info = shell_output("#{bin}/kata version --json")',
       'assert_match %Q("version":"v#{version}"), info',
-      'assert_match %Q("distribution":"homebrew"), info',
+      %q(assert_match '"distribution":"homebrew"', info),
       'system bin/"kata", "_web-assets-check"',
       'assert_match "brew upgrade kata", shell_output("#{bin}/kata update --yes 2>&1", 2)',
     ],

@@ -156,7 +156,8 @@ class UpdateFormulaeTest < Minitest::Test
     assert_includes formula, 'bin.install "kata"'
     assert_includes formula, 'info = shell_output("#{bin}/kata version --json")'
     assert_includes formula, 'assert_match %Q("version":"v#{version}"), info'
-    assert_includes formula, 'assert_match %Q("distribution":"homebrew"), info'
+    assert_includes formula, %q(assert_match '"distribution":"homebrew"', info)
+    refute_includes formula, '%Q("distribution":"homebrew")'
     assert_includes formula, 'system bin/"kata", "_web-assets-check"'
     assert_includes formula, 'assert_match "brew upgrade kata", shell_output("#{bin}/kata update --yes 2>&1", 2)'
     refute_includes formula, "def caveats"
