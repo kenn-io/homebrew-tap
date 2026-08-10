@@ -168,14 +168,13 @@ jobs:
           version="$(mise exec --locked -- ruby -I. -rscripts/ghosthub_cask -e 'puts GhosthubCask.parse_current_cask(File.read(GhosthubCask::CASK_PATH)).version')"
           test "$version" = "${{ needs.validate.outputs.version }}"
 
-      # GITHUB_TOKEN-created PRs may leave ordinary PR CI waiting for maintainer
-      # approval. The successful validate job above is authoritative test evidence.
       - name: Create pull request
         uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773c
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           branch: automation/update-ghosthub-cask
           delete-branch: true
+          add-paths: Casks/ghosthub.rb
           title: "Update Ghosthub cask to ${{ needs.validate.outputs.version }}"
           commit-message: "Update Ghosthub cask to ${{ needs.validate.outputs.version }}"
           body: |
