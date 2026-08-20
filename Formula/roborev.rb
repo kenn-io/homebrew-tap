@@ -7,11 +7,11 @@ class Roborev < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/kenn-io/roborev/releases/download/v0.65.0/roborev_0.65.0_darwin_amd64.tar.gz"
-      sha256 "2435ac0cb5a00930d009a2162bc112106993d4e48fa3ed3b58c9bc7a454ce539"
+      sha256 "bb04a363cbc9dac1d9967efe61fbe2da7f57c9fb2ecd3eee9ced60862330789f"
     end
     if Hardware::CPU.arm?
       url "https://github.com/kenn-io/roborev/releases/download/v0.65.0/roborev_0.65.0_darwin_arm64.tar.gz"
-      sha256 "b063326bdd341237e9df8215f54338ed5d8cdf151fe11ca4b955817f87dc5a8c"
+      sha256 "fd41e0a2551374e2bbafed0d4827a11a20e14f2f125af2b9d8b44a5211e20ae0"
     end
   end
 
