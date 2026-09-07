@@ -132,8 +132,7 @@ module GhosthubCask
         version "#{validated.version}"
         sha256 "#{validated.sha256}"
 
-        url "https://github.com/kenn-io/ghosthub/releases/download/v\#{version}/Ghosthub_\#{version}_macos_arm64.dmg",
-            verified: "github.com/kenn-io/ghosthub/"
+        url "https://github.com/kenn-io/ghosthub/releases/download/v\#{version}/Ghosthub_\#{version}_macos_arm64.dmg"
         name "Ghosthub"
         desc "Native terminal for local and remote tmux fleets"
         homepage "https://ghosthub.ai/"
