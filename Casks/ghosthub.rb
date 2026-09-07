@@ -2,8 +2,7 @@ cask "ghosthub" do
   version "0.9.0"
   sha256 "0d2ff4cbcb44ce53d3845628101cbe52273d08f4d642c201ef346b6e9e3db131"
 
-  url "https://github.com/kenn-io/ghosthub/releases/download/v#{version}/Ghosthub_#{version}_macos_arm64.dmg",
-      verified: "github.com/kenn-io/ghosthub/"
+  url "https://github.com/kenn-io/ghosthub/releases/download/v#{version}/Ghosthub_#{version}_macos_arm64.dmg"
   name "Ghosthub"
   desc "Native terminal for local and remote tmux fleets"
   homepage "https://ghosthub.ai/"

@@ -106,7 +106,7 @@ class GhosthubCaskTest < Minitest::Test
 
     assert_equal release, GhosthubCask.parse_current_cask(rendered)
     assert_includes rendered, "auto_updates true"
-    assert_includes rendered, "depends_on macos: :tahoe"
+    assert_includes rendered, "depends_on macos: :sequoia"
     assert_includes rendered, "app \"Ghosthub.app\""
   end
 
