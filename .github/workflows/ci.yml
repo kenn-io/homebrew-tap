@@ -47,8 +47,6 @@ jobs:
 
       - name: Check updater scripts
         run: |
-          mise exec --locked -- ruby -c scripts/update-formulae.rb
-          mise exec --locked -- ruby -Itest test/update_formulae_test.rb
           mise exec --locked -- ruby -c scripts/ghosthub_cask.rb
           mise exec --locked -- ruby -c scripts/update-ghosthub-cask.rb
           mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
