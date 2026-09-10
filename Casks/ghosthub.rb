@@ -1,6 +1,6 @@
 cask "ghosthub" do
-  version "0.10.1"
-  sha256 "13a31db39f96b586f8cba26d3f1b0326f42e4b00431e8b7bac33344356f6fce9"
+  version "0.10.2"
+  sha256 "8dcc89c9e13c040913f3831b7b28485431269e7a2e345baff55825ea937ea154"
 
   url "https://github.com/kenn-io/ghosthub/releases/download/v#{version}/Ghosthub_#{version}_macos_arm64.dmg"
   name "Ghosthub"
