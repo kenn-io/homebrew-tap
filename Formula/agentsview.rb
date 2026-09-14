@@ -1,28 +1,28 @@
 class Agentsview < Formula
   desc "Local web viewer and analytics for AI coding agent sessions"
   homepage "https://agentsview.io"
-  version "0.42.0"
+  version "0.43.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/agentsview/releases/download/v0.42.0/agentsview_0.42.0_darwin_amd64.tar.gz"
-      sha256 "adf3ce82a10da289c75eaa07e8287f8f40d8d3e25cbcfcbb3b489401b0807957"
+      url "https://github.com/kenn-io/agentsview/releases/download/v0.43.0/agentsview_0.43.0_darwin_amd64.tar.gz"
+      sha256 "79d8ad3e06d04d6e847b0d9e53dd8ec85724c92f7ae3a5bbc6c51031195d876b"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/agentsview/releases/download/v0.42.0/agentsview_0.42.0_darwin_arm64.tar.gz"
-      sha256 "57f437a089f2f9d41c7335d7ce2a96f2ba95a11d4517678c6a6866a65390a3f3"
+      url "https://github.com/kenn-io/agentsview/releases/download/v0.43.0/agentsview_0.43.0_darwin_arm64.tar.gz"
+      sha256 "9c9c3ee0bad04f884b07816f23a7c58923ba5bd5a9a1057fa048198a53a4a37c"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/agentsview/releases/download/v0.42.0/agentsview_0.42.0_linux_amd64.tar.gz"
-      sha256 "f2b8a278b60776ee8edb745cb5bb3da2b5de57271b49a69d94af4fa2bdb17414"
+      url "https://github.com/kenn-io/agentsview/releases/download/v0.43.0/agentsview_0.43.0_linux_amd64.tar.gz"
+      sha256 "4520c6698772d2db7220212abf58d7d58c0966d7435f0a5ab134371f874df6d9"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/agentsview/releases/download/v0.42.0/agentsview_0.42.0_linux_arm64.tar.gz"
-      sha256 "c148ef8c8bc9715e2c351c1bf726135479b5e778693f86ade69200e1ebcc09ca"
+      url "https://github.com/kenn-io/agentsview/releases/download/v0.43.0/agentsview_0.43.0_linux_arm64.tar.gz"
+      sha256 "3c4141bc1356058246336ea8b49a2c846f3050e9a199aa8f732c8815c2dd4e50"
     end
   end
 
