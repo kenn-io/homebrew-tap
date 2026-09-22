@@ -25,6 +25,17 @@ brew install ghosthub
 
 ## Available Formulas
 
+### msgvault
+
+Archive email and chat with offline search, analytics, and a web UI.
+
+**Install:**
+```bash
+brew install kenn-io/tap/msgvault
+```
+
+For documentation, visit [msgvault](https://github.com/kenn-io/msgvault).
+
 ### roborev
 
 Automatic code review daemon for git commits using AI agents.
