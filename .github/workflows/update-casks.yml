@@ -59,7 +59,7 @@ jobs:
     name: Verify and package Ghosthub cask update
     needs: check
     if: needs.check.outputs.changed == 'true'
-    runs-on: macos-26
+    runs-on: namespace-profile-mac-6cpu
     permissions:
       contents: read
     outputs:

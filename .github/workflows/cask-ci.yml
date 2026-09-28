@@ -37,7 +37,7 @@ permissions:
 jobs:
   cask:
     name: Verify notarized Ghosthub cask
-    runs-on: macos-26
+    runs-on: namespace-profile-mac-6cpu
     env:
       HOMEBREW_NO_ANALYTICS: "1"
       HOMEBREW_NO_ENV_HINTS: "1"
