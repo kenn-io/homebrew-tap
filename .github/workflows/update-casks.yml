@@ -11,7 +11,7 @@ permissions:
 jobs:
   check:
     name: Check for a newer Ghosthub release
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-linux-4cpu
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: read
@@ -142,7 +142,7 @@ jobs:
   create-pull-request:
     name: Create Ghosthub cask update pull request
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: namespace-profile-linux-4cpu
     permissions:
       contents: write
       pull-requests: write
