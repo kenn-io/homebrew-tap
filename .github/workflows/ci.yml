@@ -13,13 +13,13 @@ permissions:
 jobs:
   homebrew:
     name: Homebrew (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-latest' && 'namespace-profile-mac-6cpu' || 'namespace-profile-linux-4cpu' }}
     strategy:
       fail-fast: false
       matrix:
         os:
-          - namespace-profile-mac-6cpu
-          - namespace-profile-linux-4cpu
+          - macos-latest
+          - ubuntu-latest
     env:
       HOMEBREW_NO_ANALYTICS: "1"
       HOMEBREW_NO_ENV_HINTS: "1"
