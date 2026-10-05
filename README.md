@@ -25,6 +25,17 @@ brew install ghosthub
 
 ## Available Formulas
 
+### docbank
+
+Store, search, and export documents with version history.
+
+**Install:**
+```bash
+brew install kenn-io/tap/docbank
+```
+
+For documentation, visit [docbank.ai](https://docbank.ai).
+
 ### msgvault
 
 Archive email and chat with offline search, analytics, and a web UI.
