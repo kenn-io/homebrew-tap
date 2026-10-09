@@ -1,28 +1,28 @@
 class Docbank < Formula
   desc "Store, search, and export documents with version history"
   homepage "https://docbank.ai"
-  version "0.15.0"
+  version "0.15.1"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/docbank/releases/download/v0.15.0/docbank_0.15.0_darwin_amd64.tar.gz"
-      sha256 "3141817d4cb7dd3b9a7336a3bef9d24c263a1a4492312a60603b843b02df4d9c"
+      url "https://github.com/kenn-io/docbank/releases/download/v0.15.1/docbank_0.15.1_darwin_amd64.tar.gz"
+      sha256 "e38249c0518035c6e96ca3300fb386f88094940751ad320f2cee1274ce27e4f4"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/docbank/releases/download/v0.15.0/docbank_0.15.0_darwin_arm64.tar.gz"
-      sha256 "174fda3400f1142e24ad1cd6418f0ecb3be3611c85e720b3603b5cf655c3b13c"
+      url "https://github.com/kenn-io/docbank/releases/download/v0.15.1/docbank_0.15.1_darwin_arm64.tar.gz"
+      sha256 "5b6974095eab0225a2549a744f0193f96441ebfcbeaf47b0800bd897af847f76"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/docbank/releases/download/v0.15.0/docbank_0.15.0_linux_amd64.tar.gz"
-      sha256 "ed7aea113caa086d122888901923be8ede0f51f148696bb6b3100a2e44e8ea44"
+      url "https://github.com/kenn-io/docbank/releases/download/v0.15.1/docbank_0.15.1_linux_amd64.tar.gz"
+      sha256 "04db9e1101bdc9a983ed8a74d88c8d6b2d17a204c280a8cc9d279a6f3a75d990"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/docbank/releases/download/v0.15.0/docbank_0.15.0_linux_arm64.tar.gz"
-      sha256 "d4ff824056e18239add5c8e6ead57b6b04a0c3d7834b7590e2fb8dbc342e199e"
+      url "https://github.com/kenn-io/docbank/releases/download/v0.15.1/docbank_0.15.1_linux_arm64.tar.gz"
+      sha256 "a50f1655a81e9da7a0403d2922b1254b277ecef900132c5801d1336a60405f7f"
     end
   end
 
