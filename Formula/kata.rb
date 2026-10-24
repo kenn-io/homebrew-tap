@@ -1,28 +1,28 @@
 class Kata < Formula
   desc "Git-native issue tracking for agentic development"
   homepage "https://katatracker.com"
-  version "0.19.0"
+  version "0.20.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/kata/releases/download/v0.19.0/kata_0.19.0_homebrew_darwin_amd64.tar.gz"
-      sha256 "81fd3cb241391fb78c76fb87d5b7d13230e34e7678cad62655ca8d509cb3845c"
+      url "https://github.com/kenn-io/kata/releases/download/v0.20.0/kata_0.20.0_homebrew_darwin_amd64.tar.gz"
+      sha256 "95fcdd6f0dc600123481b9d83c5ecc6074ddfa1ba723853509c165e07c1ef3a0"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/kata/releases/download/v0.19.0/kata_0.19.0_homebrew_darwin_arm64.tar.gz"
-      sha256 "babdd5e8f9c449b026a97d9c98bea318d413371cc371fd1a792b1340eff77f44"
+      url "https://github.com/kenn-io/kata/releases/download/v0.20.0/kata_0.20.0_homebrew_darwin_arm64.tar.gz"
+      sha256 "d3185037fb4a04fc13a765a8952a08a9c9d444f084592ed1648c6d8c6b5dcd76"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/kata/releases/download/v0.19.0/kata_0.19.0_homebrew_linux_amd64.tar.gz"
-      sha256 "28da39a7b16b126c56345ddf9b49520a8c90c1eb12d73373cdf3de05621e8bfc"
+      url "https://github.com/kenn-io/kata/releases/download/v0.20.0/kata_0.20.0_homebrew_linux_amd64.tar.gz"
+      sha256 "b35781751cf36a1963be577c92b8f71a13b2a5ec934ded620e1b10e6a685ac6c"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/kata/releases/download/v0.19.0/kata_0.19.0_homebrew_linux_arm64.tar.gz"
-      sha256 "a59db6ef47e08d705e1d93de83d93304f221e496acd52b4cfdb556c34f224ef4"
+      url "https://github.com/kenn-io/kata/releases/download/v0.20.0/kata_0.20.0_homebrew_linux_arm64.tar.gz"
+      sha256 "de69dee8b87a3de7edf23dd6ba47adba347081c61c037320e09ed5aa83c17aa7"
     end
   end
 
