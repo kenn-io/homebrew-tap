@@ -44,6 +44,7 @@ jobs:
         run: |
           # shellcheck disable=SC2016
           ruby -e 'tap = File.realpath(`brew --repo kenn-io/tap`.strip); workspace = File.realpath(ENV.fetch("GITHUB_WORKSPACE")); abort "kenn-io/tap resolves to #{tap}, expected #{workspace}" unless tap == workspace; puts "kenn-io/tap -> #{tap}"'
+          brew trust kenn-io/tap
 
       - name: Check updater scripts
         run: |
