@@ -28,15 +28,15 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up mise
-        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db
+        uses: jdx/mise-action@v5.2.2
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@a84a03efc108f7d05469800fd48890c1cd34a6ad
+        uses: step-security/setup-homebrew@v2026.9.21
         with:
           stable: true
 
