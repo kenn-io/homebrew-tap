@@ -1,0 +1,104 @@
+name: Merge automated updates
+
+on:
+  # This job runs no pull request code; it reads check results and merges.
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows:
+      - CI
+      - Ghosthub Cask CI
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+concurrency:
+  group: automerge-${{ github.event.workflow_run.head_sha }}
+
+jobs:
+  merge:
+    name: Merge passing automated update
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'automation/')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      # The release bot that opens formula updates, and the owner of the token
+      # that opens cask updates.
+      AUTHOR_IDS: "313427593 329591"
+      QUERY: |
+        query($owner: String!, $name: String!, $branch: String!) {
+          repository(owner: $owner, name: $name) {
+            pullRequests(headRefName: $branch, states: OPEN, first: 5) {
+              nodes {
+                number
+                headRefOid
+                isCrossRepository
+                author {
+                  ... on Bot { databaseId }
+                  ... on User { databaseId }
+                }
+                commits(last: 1) {
+                  nodes {
+                    commit {
+                      statusCheckRollup {
+                        state
+                        contexts(first: 100) {
+                          nodes {
+                            ... on CheckRun {
+                              checkSuite { workflowRun { workflow { name } } }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+
+    steps:
+      - name: Merge once every check on the head commit passes
+        run: |
+          set -euo pipefail
+          pr="$(gh api graphql \
+            -f owner="$GITHUB_REPOSITORY_OWNER" \
+            -f name="${GITHUB_REPOSITORY#*/}" \
+            -f branch="$HEAD_BRANCH" \
+            -f query="$QUERY" \
+            --jq '.data.repository.pullRequests.nodes[] | select(.headRefOid == env.HEAD_SHA and (.isCrossRepository | not))')"
+          if [[ -z "$pr" ]]; then
+            echo "::notice::No open pull request from $HEAD_BRANCH has head $HEAD_SHA."
+            exit 0
+          fi
+          number="$(jq -r '.number' <<<"$pr")"
+          author="$(jq -r '.author.databaseId // empty' <<<"$pr")"
+          if [[ -z "$author" || " $AUTHOR_IDS " != *" $author "* ]]; then
+            echo "::notice::Pull request #$number was not opened by update automation."
+            exit 0
+          fi
+          rollup="$(jq -c '.commits.nodes[0].commit.statusCheckRollup' <<<"$pr")"
+          state="$(jq -r '.state // "MISSING"' <<<"$rollup")"
+          if [[ "$state" != SUCCESS ]]; then
+            echo "::notice::Pull request #$number checks are $state; leaving it open."
+            exit 0
+          fi
+          gh pr merge "$number" --squash --match-head-commit "$HEAD_SHA"
+          # Merges made with this token start no push workflows, so rerun the
+          # tap workflows that ran on the pull request against the new main.
+          jq -r '[.contexts.nodes[].checkSuite.workflowRun.workflow.name // empty | select(IN("CI", "Ghosthub Cask CI"))] | unique | .[]' <<<"$rollup" |
+            while read -r workflow; do
+              gh workflow run "$workflow" --ref main
+            done
