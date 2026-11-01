@@ -1,0 +1,42 @@
+review_guidelines = """
+This public tap publishes Homebrew formulae for this organization's command-line tools
+(`Formula/`) and the Ghosthub macOS app cask (`Casks/ghosthub.rb`). Users
+install them as `kenn-io/tap/<name>`, so a merged change reaches their machines
+on the next install or upgrade.
+
+Formulae:
+- Each formula installs prebuilt release archives from that tool's
+  `https://github.com/kenn-io/<tool>/releases/download/v<version>/` URLs.
+  Version bumps usually arrive as automated pull requests from the tool's
+  release automation. Check that the `version` stanza, every platform URL, and
+  every `sha256` refer to the same release.
+- Formulae declare one `version` and repeat it in every platform URL on
+  purpose; CI runs the strict formula audit with `--except=version` for that
+  reason. Do not report the redundant-version advisory.
+
+Ghosthub cask:
+- `scripts/ghosthub_cask.rb` (`render`) generates `Casks/ghosthub.rb`. Change
+  the template and the cask together; `parse_current_cask` requires exactly one
+  `version` and one `sha256` stanza.
+- `.github/workflows/update-casks.yml` checks the latest Ghosthub release every
+  hour and treats the GitHub release metadata as untrusted input.
+  `parse_release` accepts only a non-draft, non-prerelease `vX.Y.Z` tag with
+  exactly one canonical DMG asset, a SHA-256 digest, and the canonical
+  `https://github.com/kenn-io/ghosthub` download URL, and `render` refuses
+  downgrades. Before a pull request is opened,
+  `scripts/verify-ghosthub-release.sh` and `scripts/verify-ghosthub-app.sh`
+  require the downloaded DMG to match that digest, pass stapler and Gatekeeper
+  assessment as a Notarized Developer ID, and contain one `Ghosthub.app` signed
+  with bundle identifier `com.ghosthub` and Team Identifier `2YMZH84KR8`.
+  Report any change that loosens these checks or lets an unverified asset reach
+  the cask.
+- Only the `create-pull-request` job has contents and pull-request write
+  permission and the `HOMEBREW_TAP_TOKEN` secret. It applies a patch limited to
+  `Casks/ghosthub.rb` that the read-only `validate` job produced. This split
+  keeps write authority out of the jobs that download, mount, and install
+  release artifacts; report changes that undo it.
+
+Workflows reference actions by version tag. `.github/workflows/actions.lock`
+pins each one to a commit, and `workflow-validation.yml` fails a pull request
+whose lockfile is stale. Do not report tag references as unpinned actions.
+"""
