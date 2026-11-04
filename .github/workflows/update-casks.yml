@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up mise
-        uses: jdx/mise-action@v5.2.4
+        uses: jdx/mise-action@v5.2.6
 
       - name: Check release model
         run: mise exec --locked -- ruby -Itest test/ghosthub_cask_test.rb
@@ -77,7 +77,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up mise
-        uses: jdx/mise-action@v5.2.4
+        uses: jdx/mise-action@v5.2.6
 
       - name: Set up Homebrew
         uses: step-security/setup-homebrew@v2026.9.21
@@ -154,7 +154,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up mise
-        uses: jdx/mise-action@v5.2.4
+        uses: jdx/mise-action@v5.2.6
 
       - name: Download cask patch
         uses: actions/download-artifact@v8.0.2
