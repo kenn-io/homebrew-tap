@@ -6,8 +6,8 @@ class Docbank < Formula
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/docbank/releases/download/v0.16.0/docbank_0.16.0_darwin_amd64.tar.gz"
-      sha256 "20959ed9751132f0fcf509650f20c5e914e228a737e159f4e1ce06d15277ea76"
+      url "https://github.com/kenn-io/docbank/archive/refs/tags/v0.17.0.tar.gz"
+      sha256 "b3b21950e5d2ae11e2d0dad8e5aaff94a20b7e4b5c16aa8746b71e2616594674"
     end
     if Hardware::CPU.arm?
       url "https://github.com/kenn-io/docbank/releases/download/v0.16.0/docbank_0.16.0_darwin_arm64.tar.gz"
