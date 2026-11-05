@@ -169,6 +169,7 @@ jobs:
           test "$version" = "${{ needs.validate.outputs.version }}"
 
       - name: Create pull request
+        id: pull-request
         uses: step-security/create-pull-request@v8.1.1
         with:
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -181,3 +182,11 @@ jobs:
             A newer stable Ghosthub release is available for the Homebrew tap.
 
             Before this pull request was created, the exact SHA-pinned DMG passed staple validation, DMG and app Gatekeeper assessment, signing-identity checks, Homebrew audit and livecheck, install, installed-app verification, and uninstall on Apple Silicon macOS 26.
+
+      - name: Enable auto-merge
+        if: steps.pull-request.outputs.pull-request-operation == 'created' || steps.pull-request.outputs.pull-request-operation == 'updated'
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.pull-request.outputs.pull-request-number }}
+        run: gh pr merge --auto --squash "$PR_NUMBER"
