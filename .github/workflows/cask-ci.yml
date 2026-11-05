@@ -58,7 +58,7 @@ jobs:
   cask:
     name: Verify notarized Ghosthub cask
     needs: changes
-    if: needs.changes.outputs.cask == 'true'
+    if: ${{ !cancelled() && needs.changes.outputs.cask != 'false' }}
     runs-on: macos-26
     env:
       HOMEBREW_NO_ANALYTICS: "1"
