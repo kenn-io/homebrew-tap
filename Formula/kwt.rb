@@ -4,6 +4,8 @@ class Kwt < Formula
   version "0.9.6"
   license "Apache-2.0"
 
+  depends_on "tmux"
+
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/kenn-io/kwt/releases/download/v0.9.6/kwt_0.9.6_darwin_amd64.tar.gz"
@@ -25,8 +27,6 @@ class Kwt < Formula
       sha256 "8f926af83a8e4d5610ffbb2a830cfcf4e258ea98f0104062cc48743828d82c60"
     end
   end
-
-  depends_on "tmux"
 
   def install
     bin.install "kwt"
