@@ -94,3 +94,17 @@ agentsview usage daily
 ```
 
 For full documentation, visit [agentsview.io](https://agentsview.io).
+
+### kwt
+
+Manage Git worktrees from a terminal dashboard or a scriptable CLI.
+
+**Install:**
+```bash
+brew install kenn-io/tap/kwt
+```
+
+Homebrew also installs tmux, which kwt uses to open workspaces. kwt needs Git
+2.20 or newer.
+
+For documentation, visit [kwt](https://github.com/kenn-io/kwt).
