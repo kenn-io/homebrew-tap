@@ -6,8 +6,8 @@ class Agentsview < Formula
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/agentsview/releases/download/v0.46.1/agentsview_0.46.1_darwin_amd64.tar.gz"
-      sha256 "ed83679fc6ddcee02f1f66490ba0902fd8710dbf2bd5bb45172737dacbd340ea"
+      url "https://github.com/kenn-io/agentsview/archive/refs/tags/v0.47.0.tar.gz"
+      sha256 "718ad28de64cd2e017633c29df058a78653da6e6d59f7e7d8c9ab783606ccaa2"
     end
     if Hardware::CPU.arm?
       url "https://github.com/kenn-io/agentsview/releases/download/v0.46.1/agentsview_0.46.1_darwin_arm64.tar.gz"
