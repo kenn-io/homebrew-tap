@@ -1,28 +1,28 @@
 class Msgvault < Formula
   desc "Archive a lifetime of email and chat with offline search and analytics"
   homepage "https://github.com/kenn-io/msgvault"
-  version "0.23.0"
+  version "0.24.0"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/msgvault/releases/download/v0.23.0/msgvault_0.23.0_homebrew_darwin_amd64.tar.gz"
-      sha256 "d0ca5d37e410e29c367a4879cb20b0630fae7caf5214b3a4c0ab20fece798594"
+      url "https://github.com/kenn-io/msgvault/releases/download/v0.24.0/msgvault_0.24.0_homebrew_darwin_amd64.tar.gz"
+      sha256 "1ef6c3fb51ed90521366e6336303d0be9e876233ae016660b357f7eee8f45b55"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/msgvault/releases/download/v0.23.0/msgvault_0.23.0_homebrew_darwin_arm64.tar.gz"
-      sha256 "e32df0aa3175f2b0466485c297940619a1444d49903fcca291c49a550b3f5b59"
+      url "https://github.com/kenn-io/msgvault/releases/download/v0.24.0/msgvault_0.24.0_homebrew_darwin_arm64.tar.gz"
+      sha256 "d2279764732bf447113ebbb2e4e30f6c56a0d05a1fc373d9885dc9c06c50c532"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel?
-      url "https://github.com/kenn-io/msgvault/releases/download/v0.23.0/msgvault_0.23.0_homebrew_linux_amd64.tar.gz"
-      sha256 "fa12ea00c8232bac0e6820f705fa88aab346f7699eb09238727cbfbdadf46f9c"
+      url "https://github.com/kenn-io/msgvault/releases/download/v0.24.0/msgvault_0.24.0_homebrew_linux_amd64.tar.gz"
+      sha256 "cad511703b3cb5a6e8f0aff702b3dcb193985ff61d333450c5462f5fafb956b2"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kenn-io/msgvault/releases/download/v0.23.0/msgvault_0.23.0_homebrew_linux_arm64.tar.gz"
-      sha256 "051b385d032d8e31cc55d6e97e6c667353b6f5e308586bb984f81219aed92b98"
+      url "https://github.com/kenn-io/msgvault/releases/download/v0.24.0/msgvault_0.24.0_homebrew_linux_arm64.tar.gz"
+      sha256 "ab47be6341494973b9422a51e7ca43d3bd805c44a426c3c0f11af38ee12f4fce"
     end
   end
 
