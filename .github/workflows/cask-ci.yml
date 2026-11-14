@@ -2,18 +2,6 @@ name: Ghosthub Cask CI
 
 on:
   pull_request:
-    paths:
-      - "Casks/ghosthub.rb"
-      - "scripts/ghosthub_cask.rb"
-      - "scripts/update-ghosthub-cask.rb"
-      - "scripts/verify-ghosthub-app.sh"
-      - "scripts/verify-ghosthub-release.sh"
-      - "test/ghosthub_cask_test.rb"
-      - "test/verify_ghosthub_app_test.rb"
-      - ".mise.toml"
-      - "mise.lock"
-      - ".github/workflows/cask-ci.yml"
-      - ".github/workflows/update-casks.yml"
   push:
     branches:
       - main
@@ -35,8 +23,45 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      cask: ${{ steps.changes.outputs.cask }}
+    steps:
+      - name: Detect cask changes
+        id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          cask=true
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            cask=false
+            if ! files="$(gh api --paginate "repos/$GH_REPO/pulls/$PR_NUMBER/files" --jq '.[] | .filename, .previous_filename // empty')"; then
+              echo "cask=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            while IFS= read -r path; do
+              case "$path" in
+                Casks/ghosthub.rb|scripts/ghosthub_cask.rb|scripts/update-ghosthub-cask.rb|\
+                scripts/verify-ghosthub-app.sh|scripts/verify-ghosthub-release.sh|\
+                test/ghosthub_cask_test.rb|test/verify_ghosthub_app_test.rb|\
+                .mise.toml|mise.lock|.github/workflows/cask-ci.yml|.github/workflows/update-casks.yml)
+                  cask=true
+                  break
+                  ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "cask=$cask" >> "$GITHUB_OUTPUT"
+
   cask:
     name: Verify notarized Ghosthub cask
+    needs: changes
+    if: needs.changes.outputs.cask == 'true'
     runs-on: macos-26
     env:
       HOMEBREW_NO_ANALYTICS: "1"
